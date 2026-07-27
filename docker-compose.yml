@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  vendorguard-adk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - ENV=production
+      - LOG_LEVEL=INFO
+      - VECTOR_STORE_PATH=/app/data/vector_db
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vendorguard-adk"
+version = "1.0.0"
+description = "Automated Enterprise Security & Compliance Assessment Agent built with Google ADK"
+authors = [
+    {name = "AI Developer", email = "developer@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "google-adk>=2.5.0",
+    "pydantic>=2.13.0",
+    "chromadb>=1.5.0",
+    "opentelemetry-api>=1.42.0",
+    "streamlit>=1.60.0"
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --asyncio-mode=strict"
+testpaths = [
+    "tests",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
