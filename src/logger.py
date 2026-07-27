@@ -8,13 +8,14 @@ import logging
 import sys
 from datetime import datetime, timezone
 from typing import Any, Dict
-from src.pii_sanitizer import pii_sanitizer
 
 
 class JSONFormatter(logging.Formatter):
     """Custom logging formatter that produces JSON formatted string output with scrubbed PII."""
 
     def format(self, record: logging.LogRecord) -> str:
+        from src.pii_sanitizer import pii_sanitizer
+
         log_object: Dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,

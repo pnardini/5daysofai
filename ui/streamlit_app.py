@@ -1,6 +1,8 @@
 """
 VendorGuard ADK - Interactive Streamlit UI Dashboard.
-Provides a rich, modern web interface with live OpenTelemetry traces, Vector Store Memory inspector, PII Redaction validator, and JSON log viewer.
+Provides a rich, modern web interface with live Strategic Model Routing insights,
+ADK Guardrail Evaluations, Human-in-the-Loop Pause/Approval Hooks, OpenTelemetry traces,
+Vector Store Memory inspector, PII Redaction validator, and JSON log viewer.
 """
 
 import asyncio
@@ -54,9 +56,9 @@ st.markdown("""
         border-radius: 6px;
         font-weight: 600;
     }
-    .badge-pii {
-        background-color: #0284c7;
-        color: #e0f2fe;
+    .badge-hitl {
+        background-color: #b45309;
+        color: #fef3c7;
         padding: 4px 10px;
         border-radius: 6px;
         font-weight: 600;
@@ -74,13 +76,21 @@ st.sidebar.title("🛡️ VendorGuard ADK")
 st.sidebar.markdown("`Google ADK Multi-Agent System`")
 menu = st.sidebar.radio(
     "Navigation",
-    ["Vendor Risk Evaluator", "PII Redaction Engine", "OpenTelemetry Tracing", "Vector Memory Store", "ADK Architecture"]
+    [
+        "Vendor Risk Evaluator",
+        "Human-in-the-Loop (HITL)",
+        "PII Redaction & Guardrails",
+        "OpenTelemetry Tracing",
+        "Vector Memory Store",
+        "ADK Architecture"
+    ]
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🔒 Security Status")
-st.sidebar.markdown("✅ **PII Filter**: Active")
-st.sidebar.markdown("✅ **JSON Logger**: Enforced")
+st.sidebar.markdown("### 🔒 Security & AI Routing Status")
+st.sidebar.markdown("⚡ **Routing**: Dynamic (Flash + Pro)")
+st.sidebar.markdown("🛡️ **Guardrails**: ADK Native Evaluator")
+st.sidebar.markdown("⏸️ **HITL Hooks**: Active (Pause & Resume)")
 st.sidebar.markdown("✅ **Async Memory**: ChromaDB Vector Store")
 st.sidebar.markdown("✅ **Tracing**: OpenTelemetry")
 
@@ -89,13 +99,13 @@ st.sidebar.markdown("✅ **Tracing**: OpenTelemetry")
 st.markdown("""
 <div class="main-header">
     <h1 style="margin:0; font-size: 2.2rem;">🛡️ VendorGuard ADK</h1>
-    <p style="margin:5px 0 0 0; opacity: 0.9;">Automated Enterprise Security & Compliance Assessment Agent built with <b>Google Agent Development Kit (ADK)</b></p>
+    <p style="margin:5px 0 0 0; opacity: 0.9;">Automated Enterprise Security & Compliance Assessment Agent with <b>Strategic Model Routing, ADK Guardrails & HITL Hooks</b></p>
 </div>
 """, unsafe_allow_html=True)
 
 
 # PAGE 1: VENDOR EVALUATION
-if menu == "VendorRiskEvaluator" or menu == "Vendor Risk Evaluator":
+if menu == "Vendor Risk Evaluator":
     st.subheader("📋 Submit Vendor for Multi-Agent Security Audit")
 
     col1, col2 = st.columns([1, 1])
@@ -121,7 +131,7 @@ if menu == "VendorRiskEvaluator" or menu == "Vendor Risk Evaluator":
     submit_button = st.button("🚀 Run ADK Security Audit", type="primary", use_container_width=True)
 
     if submit_button:
-        with st.spinner("Executing Google ADK Multi-Agent Pipeline & Vector Memory lookup..."):
+        with st.spinner("Executing Strategic Routing, ADK Guardrails & Multi-Agent Pipeline..."):
             req = EvaluationRequest(
                 vendor_name=vendor_name,
                 data_sensitivity=sensitivity,
@@ -134,7 +144,23 @@ if menu == "VendorRiskEvaluator" or menu == "Vendor Risk Evaluator":
             )
             response = run_async(app_service.evaluate_vendor(req))
 
-        st.success("Audit Completed Successfully!")
+        st.success(f"Audit Pipeline Processed (Evaluation ID: {response.evaluation_id})")
+
+        # HITL Alert Banner if Paused
+        if response.requires_human_approval:
+            st.warning(f"⏸️ **HUMAN-IN-THE-LOOP PAUSE HOOK TRIGGERED**\n\n{response.hitl_trigger_reason}")
+            
+            c_app, c_rej = st.columns(2)
+            with c_app:
+                if st.button("✅ Approve Vendor (CISO Sign-Off)", key=f"app_{response.evaluation_id}"):
+                    res = app_service.submit_human_decision(response.evaluation_id, "APPROVED", "Approved after CISO manual review")
+                    st.success(f"Vendor Approved! Status: {res.status}")
+                    st.rerun()
+            with c_rej:
+                if st.button("❌ Reject Vendor", key=f"rej_{response.evaluation_id}"):
+                    res = app_service.submit_human_decision(response.evaluation_id, "REJECTED", "Rejected due to security risk thresholds")
+                    st.error(f"Vendor Rejected! Status: {res.status}")
+                    st.rerun()
 
         # Results Overview Metrics
         m1, m2, m3, m4 = st.columns(4)
@@ -145,7 +171,18 @@ if menu == "VendorRiskEvaluator" or menu == "Vendor Risk Evaluator":
         with m3:
             st.metric("Contract Limit Cap", f"${response.risk_assessment['maximum_allowed_contract_value_usd']:,} USD")
         with m4:
-            st.metric("OpenTelemetry Spans", f"{response.execution_trace_count} Spans Recorded")
+            st.metric("Workflow Status", response.status)
+
+        st.markdown("---")
+
+        # Display Strategic Model Routing & ADK Guardrail Insights
+        r_col1, r_col2 = st.columns(2)
+        with r_col1:
+            st.markdown("#### ⚡ Strategic Model Routing")
+            st.json(response.model_routing)
+        with r_col2:
+            st.markdown("#### 🛡️ ADK-Native Guardrail Evaluations")
+            st.json(response.guardrail_evaluations)
 
         st.markdown("---")
         st.markdown("### 📝 Executive Audit Summary")
@@ -160,18 +197,48 @@ if menu == "VendorRiskEvaluator" or menu == "Vendor Risk Evaluator":
             st.json(response.memory_context)
 
 
-# PAGE 2: PII REDACTION ENGINE
-elif menu == "PII Redaction Engine":
-    st.subheader("🔒 Zero-PII Guarantee Inspection Engine")
-    st.markdown("VendorGuard ADK enforces strict pattern-based sanitization before data is logged, stored in vector memory, or transmitted to LLMs.")
+# PAGE 2: HUMAN-IN-THE-LOOP QUEUE
+elif menu == "Human-in-the-Loop (HITL)":
+    st.subheader("⏸️ Human-in-the-Loop Pending Approvals Queue")
+    st.markdown("When vendor evaluations exceed risk thresholds or violate baseline security policies, the workflow automatically pauses for mandatory CISO sign-off.")
+
+    pending = app_service.pending_hitl_evaluations
+    if not pending:
+        st.info("No pending vendor approvals in queue. All automated audits are fully processed.")
+    else:
+        for eval_id, response in list(pending.items()):
+            with st.expander(f"🔴 Pending Review: {response.vendor_name} (ID: {eval_id})", expanded=True):
+                st.write(f"**Trigger Reason**: {response.hitl_trigger_reason}")
+                st.write(f"**Overall Risk**: `{response.risk_assessment['overall_risk_score']}/100` ({response.risk_assessment['risk_tier']})")
+                st.write(f"**Proposed Contract Cap**: `${response.risk_assessment['maximum_allowed_contract_value_usd']:,} USD`")
+
+                notes_input = st.text_input("Reviewer Audit Notes / Comments", key=f"notes_{eval_id}", value="Reviewed risk profile and security controls.")
+                
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("✅ Approve & Authorize Contract", key=f"hitl_app_{eval_id}"):
+                        res = app_service.submit_human_decision(eval_id, "APPROVED", notes_input)
+                        st.success(f"Evaluation {eval_id} approved!")
+                        st.rerun()
+                with b2:
+                    if st.button("❌ Reject Vendor Cap", key=f"hitl_rej_{eval_id}"):
+                        res = app_service.submit_human_decision(eval_id, "REJECTED", notes_input)
+                        st.error(f"Evaluation {eval_id} rejected!")
+                        st.rerun()
+
+
+# PAGE 3: PII REDACTION & GUARDRAILS
+elif menu == "PII Redaction & Guardrails":
+    st.subheader("🔒 ADK Guardrails & Zero-PII Inspection Engine")
+    st.markdown("VendorGuard ADK combines pattern-based sanitization with ADK-native guardrail evaluations before data is logged or sent to LLMs.")
 
     user_text = st.text_area(
         "Test Raw Input String (Contains Sensitive Data)",
         value="User John Doe (john.doe@company.com) reported an issue from IP 192.168.1.105 with SSN 123-45-6789 and API key secret_key: abc123xyz456secrettoken."
     )
 
-    if st.button("Scrub PII Now"):
-        clean_text = pii_sanitizer.sanitize_text(user_text)
+    if st.button("Run ADK Guardrail Evaluation & Scrub"):
+        clean_text, eval_res = pii_sanitizer.evaluate_and_sanitize(user_text)
         
         c1, c2 = st.columns(2)
         with c1:
@@ -181,11 +248,14 @@ elif menu == "PII Redaction Engine":
             st.markdown("#### ✅ Sanitized Output (Logged & Stored)")
             st.code(clean_text)
 
+        st.markdown("#### 🛡️ ADK Evaluation Result")
+        st.json(eval_res.model_dump())
 
-# PAGE 3: OPENTELEMETRY TRACING
+
+# PAGE 4: OPENTELEMETRY TRACING
 elif menu == "OpenTelemetry Tracing":
     st.subheader("📡 Live OpenTelemetry Trace Inspector")
-    st.markdown("Real-time telemetry spans recorded across agent decision loops, memory lookups, and tool executions.")
+    st.markdown("Real-time telemetry spans recorded across strategic model routing, guardrail evaluations, and HITL pause hooks.")
 
     traces = trace_collector.get_traces()
     if not traces:
@@ -196,7 +266,7 @@ elif menu == "OpenTelemetry Tracing":
         st.json(traces)
 
 
-# PAGE 4: VECTOR MEMORY STORE
+# PAGE 5: VECTOR MEMORY STORE
 elif menu == "Vector Memory Store":
     st.subheader("🧠 Async Vector Memory Store (ChromaDB)")
     st.markdown("Asynchronous long-term vector storage for historical security audits and vendor context.")
@@ -212,31 +282,26 @@ elif menu == "Vector Memory Store":
                 st.code(res.document.content)
 
 
-# PAGE 5: ADK ARCHITECTURE
+# PAGE 6: ADK ARCHITECTURE
 elif menu == "ADK Architecture":
     st.subheader("🏗️ Google Agent Development Kit Architecture")
     st.markdown("""
     ### System Architecture & Rubric Alignment
 
-    1. **Tool & Interface Design (Strict Pydantic / JSON Schemas)**
-       - Schema validation using Pydantic v2 models across all tool inputs, tool outputs, and UI request objects.
-       - Interactive Streamlit dashboard with dark mode and live metric cards.
+    1. **Strategic Model Routing**
+       - Dynamic model router (`src/model_router.py`) selecting between `gemini-2.5-flash` (low latency, orchestrator) and `gemini-2.5-pro` (deep reasoning for compliance & risk).
 
-    2. **Context & Memory (Async Vector Store)**
+    2. **ADK-Native Guardrail Evaluations**
+       - Multi-dimensional evaluations (`src/guardrails.py`) running ADK lifecycle plugin hooks (`BasePlugin`) and safety policy evaluators (`PII_PROTECTION_EVAL`, `SECURITY_BASELINE_EVAL`).
+
+    3. **Human-in-the-Loop (HITL) Pause Hooks**
+       - Critical interruption points (`PAUSED_PENDING_HUMAN_APPROVAL`) triggered when risk score >= 50, risk tier is High/Critical, or security controls fail.
+       - Interactive CISO decision submission & resume hooks (`submit_human_decision`).
+
+    4. **Context & Memory (Async Vector Store)**
        - Asynchronous ChromaDB vector database wrapper (`AsyncVectorStore`).
-       - Non-blocking async embedding and search operations.
 
-    3. **Orchestration & Logic (ADK Multi-Agent Team)**
-       - Built with `google-adk` framework.
-       - `vendorguard_orchestrator` root agent delegating to `compliance_specialist` and `risk_evaluator` agents.
-
-    4. **Observability & Tracing (OpenTelemetry & JSON Strings)**
+    5. **Observability & Tracing (OpenTelemetry & JSON Strings)**
        - OpenTelemetry SDK instrumentation with custom span decorators (`@trace_span`).
        - JSON string structured log formatter (`JSONFormatter`).
-
-    5. **Infrastructure & CI/CD**
-       - Clean modular code layout (`src/`, `ui/`, `tests/`).
-       - Secrets Manager abstraction with Google Cloud Secret Manager support and local fallback.
-       - Full CI/CD pipeline via GitHub Actions (`.github/workflows/ci.yml`).
-       - Comprehensive unit tests covering all components.
     """)

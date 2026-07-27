@@ -1,14 +1,17 @@
 """
-PII Redaction Engine for VendorGuard ADK.
+PII Redaction Engine & ADK Guardrail Evaluation Integration for VendorGuard ADK.
 Ensures zero PII is logged, stored in memory, or sent to external services.
 """
 
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.guardrails import GuardrailEvalResult
 
 
 class PIISanitizer:
-    """Regex and pattern-based sanitizer for scrubbing Personally Identifiable Information (PII)."""
+    """PII Sanitizer & Guardrail evaluator for scrubbing Personally Identifiable Information (PII)."""
 
     PATTERNS: Dict[str, re.Pattern] = {
         "EMAIL": re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", re.IGNORECASE),
@@ -21,16 +24,22 @@ class PIISanitizer:
     }
 
     @classmethod
+    def evaluate_and_sanitize(cls, text: str) -> Tuple[str, "GuardrailEvalResult"]:
+        """Runs ADK-native evaluation and sanitizes text."""
+        from src.guardrails import ADKNativeEvaluator
+        eval_result = ADKNativeEvaluator.evaluate_pii_safety(text)
+        sanitized = cls.sanitize_text(text)
+        return sanitized, eval_result
+
+    @classmethod
     def sanitize_text(cls, text: str) -> str:
         """Sanitize a raw string by replacing matching PII patterns with redacted placeholders."""
         if not text or not isinstance(text, str):
             return text if text is not None else ""
 
         sanitized = text
-        # Redact generic secrets/API keys with capture group replacement
         sanitized = cls.PATTERNS["API_KEY"].sub(r"api_key: [REDACTED_SECRET]", sanitized)
 
-        # Redact standard pattern matches
         for pii_type, pattern in cls.PATTERNS.items():
             if pii_type == "API_KEY":
                 continue

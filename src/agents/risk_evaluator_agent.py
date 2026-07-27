@@ -1,15 +1,16 @@
 """
 Risk Evaluator Agent for VendorGuard ADK.
-Built using Google Agent Development Kit (ADK).
+Built using Google Agent Development Kit (ADK) with strategic model routing.
 """
 
 from google.adk import Agent
 from src.tools.security_tools import calculate_vendor_risk
+from src.model_router import model_router
 
 risk_agent = Agent(
     name="risk_evaluator",
     description="Calculates overall vendor risk scores, contract cap limits, and data sensitivity risk weights.",
-    model="gemini-2.5-flash",
+    model=model_router.select_model("risk_evaluator", data_sensitivity="High")["selected_model"],
     instruction="""You are a Corporate Enterprise Risk & Procurement Evaluator.
 Your goal is to calculate comprehensive risk scores and financial contract caps for third-party vendors.
 

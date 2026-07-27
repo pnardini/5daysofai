@@ -23,3 +23,6 @@ data/vector_db/
 .vscode/
 .idea/
 .DS_Store
+*.egg-info/
+build/
+dist/
