@@ -55,6 +55,7 @@ class VendorGuardApp:
     """Main Orchestrator Service integrating ADK, Strategic Model Routing, ADK Guardrails, and HITL Hooks."""
 
     def __init__(self):
+        """Initializes the VendorGuardApp orchestrator service and underlying vector memory store."""
         self.vector_store = AsyncVectorStore()
         self.root_agent: Agent = orchestrator_agent
         self.pending_hitl_evaluations: Dict[str, EvaluationResponse] = {}
@@ -62,7 +63,16 @@ class VendorGuardApp:
 
     @trace_span(name="app.evaluate_vendor", kind="workflow")
     async def evaluate_vendor(self, request: EvaluationRequest) -> EvaluationResponse:
-        """Asynchronously executes full multi-agent vendor security evaluation pipeline."""
+        """Asynchronously executes full multi-agent vendor security evaluation pipeline.
+
+        Args:
+            request (EvaluationRequest): The incoming evaluation request object containing vendor configuration,
+                data sensitivity level, encryption policies, TLS settings, MFA, and penetration testing parameters.
+
+        Returns:
+            EvaluationResponse: Comprehensive evaluation report containing audit results, vulnerability scans,
+                overall risk rating, model routing summary, ADK guardrails results, memory context, and executive summary.
+        """
         start_traces = len(trace_collector.get_traces())
         eval_id = f"eval_{uuid.uuid4().hex[:8]}"
 
@@ -222,7 +232,20 @@ class VendorGuardApp:
         decision: str,
         reviewer_notes: str = ""
     ) -> EvaluationResponse:
-        """Resumes a paused evaluation workflow after Human-in-the-Loop decision (APPROVED or REJECTED)."""
+        """Resumes a paused evaluation workflow after Human-in-the-Loop decision (APPROVED or REJECTED).
+
+        Args:
+            evaluation_id (str): Unique identifier of the paused evaluation request.
+            decision (str): Human decision choice ('APPROVED' or 'REJECTED').
+            reviewer_notes (str, optional): Additional audit comments or rationale provided by the human reviewer. Defaults to "".
+
+        Returns:
+            EvaluationResponse: Updated evaluation response reflecting human approval or rejection status.
+
+        Raises:
+            KeyError: If evaluation_id is not found in pending HITL queue.
+            ValueError: If decision string is neither 'APPROVED' nor 'REJECTED'.
+        """
         if evaluation_id not in self.pending_hitl_evaluations:
             raise KeyError(f"Evaluation ID '{evaluation_id}' not found in pending HITL queue")
 

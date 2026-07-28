@@ -14,6 +14,14 @@ class JSONFormatter(logging.Formatter):
     """Custom logging formatter that produces JSON formatted string output with scrubbed PII."""
 
     def format(self, record: logging.LogRecord) -> str:
+        """Formats a Python logging record into a PII-sanitized JSON string.
+
+        Args:
+            record (logging.LogRecord): The python logging event record object to format.
+
+        Returns:
+            str: PII-scrubbed JSON formatted log string.
+        """
         from src.pii_sanitizer import pii_sanitizer
 
         log_object: Dict[str, Any] = {
@@ -37,7 +45,15 @@ class JSONFormatter(logging.Formatter):
 
 
 def setup_logger(name: str = "vendorguard", level: str = "INFO") -> logging.Logger:
-    """Configures and returns a logger instance with JSON formatting."""
+    """Configures and returns a logger instance with JSON formatting.
+
+    Args:
+        name (str, optional): Logger name identifier. Defaults to "vendorguard".
+        level (str, optional): Logging verbosity level string (e.g., 'DEBUG', 'INFO', 'WARNING'). Defaults to "INFO".
+
+    Returns:
+        logging.Logger: Configured logger instance.
+    """
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, level.upper(), logging.INFO))
 

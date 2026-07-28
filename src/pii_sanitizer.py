@@ -25,7 +25,14 @@ class PIISanitizer:
 
     @classmethod
     def evaluate_and_sanitize(cls, text: str) -> Tuple[str, "GuardrailEvalResult"]:
-        """Runs ADK-native evaluation and sanitizes text."""
+        """Runs ADK-native evaluation and sanitizes text.
+
+        Args:
+            text (str): Input raw text string to evaluate and redact.
+
+        Returns:
+            Tuple[str, GuardrailEvalResult]: Tuple containing the redacted text string and the ADK Guardrail evaluation result.
+        """
         from src.guardrails import ADKNativeEvaluator
         eval_result = ADKNativeEvaluator.evaluate_pii_safety(text)
         sanitized = cls.sanitize_text(text)
@@ -33,7 +40,14 @@ class PIISanitizer:
 
     @classmethod
     def sanitize_text(cls, text: str) -> str:
-        """Sanitize a raw string by replacing matching PII patterns with redacted placeholders."""
+        """Sanitize a raw string by replacing matching PII patterns with redacted placeholders.
+
+        Args:
+            text (str): Input text string.
+
+        Returns:
+            str: PII-sanitized text string with redacted placeholders.
+        """
         if not text or not isinstance(text, str):
             return text if text is not None else ""
 
@@ -49,7 +63,14 @@ class PIISanitizer:
 
     @classmethod
     def sanitize_data(cls, data: Any) -> Any:
-        """Recursively sanitize nested dictionaries, lists, or primitive types."""
+        """Recursively sanitize nested dictionaries, lists, or primitive types.
+
+        Args:
+            data (Any): Arbitrary input data structure (dict, list, string, primitive).
+
+        Returns:
+            Any: Data structure with all embedded text strings sanitized for PII.
+        """
         if isinstance(data, str):
             return cls.sanitize_text(data)
         elif isinstance(data, dict):

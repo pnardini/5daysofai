@@ -20,12 +20,26 @@ class LightweightEmbeddingFunction(EmbeddingFunction):
     """Deterministic, lightweight embedding function without external disk model downloads."""
 
     def __init__(self):
+        """Initializes LightweightEmbeddingFunction."""
         super().__init__()
 
     def name(self) -> str:
+        """Returns the unique name identifier of the embedding function.
+
+        Returns:
+            str: Function name identifier string.
+        """
         return "lightweight_embedding_function"
 
     def __call__(self, input: Documents) -> Embeddings:
+        """Generates 64-dimensional normalized float vectors for input text documents.
+
+        Args:
+            input (Documents): List of document text strings to convert into embeddings.
+
+        Returns:
+            Embeddings: List of 64-dimensional float vector embeddings.
+        """
         embeddings: List[List[float]] = []
         for text in input:
             vec = [0.0] * 64
@@ -56,6 +70,12 @@ class AsyncVectorStore:
     """Asynchronous vector store wrapper around ChromaDB."""
 
     def __init__(self, collection_name: str = "vendorguard_memory", persist_directory: str = "./data/vector_db"):
+        """Initializes the ChromaDB async vector store client and collection.
+
+        Args:
+            collection_name (str, optional): ChromaDB collection name. Defaults to "vendorguard_memory".
+            persist_directory (str, optional): Disk directory path for persistent storage. Defaults to "./data/vector_db".
+        """
         self.collection_name = collection_name
         self.persist_directory = persist_directory
         os.makedirs(self.persist_directory, exist_ok=True)
@@ -87,10 +107,25 @@ class AsyncVectorStore:
 
     @trace_span(name="vector_store.add_document", kind="memory")
     async def add_document(self, doc: MemoryDocument) -> str:
-        """Asynchronously add a document to the vector store with PII sanitization."""
+        """Asynchronously add a document to the vector store with PII sanitization.
+
+        Args:
+            doc (MemoryDocument): Memory document instance containing content, vendor_id, category, and metadata.
+
+        Returns:
+            str: Document unique ID string.
+        """
         return await asyncio.to_thread(self._add_document_sync, doc)
 
     def _add_document_sync(self, doc: MemoryDocument) -> str:
+        """Synchronous implementation to sanitize and persist a document in ChromaDB.
+
+        Args:
+            doc (MemoryDocument): Document to persist into collection.
+
+        Returns:
+            str: Document ID string.
+        """
         clean_content = pii_sanitizer.sanitize_text(doc.content)
         clean_metadata = pii_sanitizer.sanitize_data(doc.metadata)
         clean_metadata["vendor_id"] = doc.vendor_id or "global"
@@ -106,10 +141,29 @@ class AsyncVectorStore:
 
     @trace_span(name="vector_store.search", kind="memory")
     async def search(self, query: str, limit: int = 5, vendor_id: Optional[str] = None) -> List[SearchResult]:
-        """Asynchronously perform vector similarity search."""
+        """Asynchronously perform vector similarity search over memory store entries.
+
+        Args:
+            query (str): Natural language search query string.
+            limit (int, optional): Maximum number of top matching results to return. Defaults to 5.
+            vendor_id (Optional[str], optional): Optional vendor ID string filter. Defaults to None.
+
+        Returns:
+            List[SearchResult]: List of SearchResult objects matching similarity criteria.
+        """
         return await asyncio.to_thread(self._search_sync, query, limit, vendor_id)
 
     def _search_sync(self, query: str, limit: int, vendor_id: Optional[str]) -> List[SearchResult]:
+        """Synchronous implementation for querying ChromaDB collection.
+
+        Args:
+            query (str): Search query string.
+            limit (int): Max result count integer.
+            vendor_id (Optional[str]): Vendor ID filter string.
+
+        Returns:
+            List[SearchResult]: List of matching SearchResult objects.
+        """
         clean_query = pii_sanitizer.sanitize_text(query)
         where_clause = {"vendor_id": vendor_id} if vendor_id else None
 
@@ -142,10 +196,11 @@ class AsyncVectorStore:
 
     @trace_span(name="vector_store.clear", kind="memory")
     async def clear(self):
-        """Asynchronously clear all memory entries."""
+        """Asynchronously clear all memory entries in the vector collection."""
         await asyncio.to_thread(self._clear_sync)
 
     def _clear_sync(self):
+        """Synchronous implementation for clearing ChromaDB collection."""
         self.client.delete_collection(self.collection_name)
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,

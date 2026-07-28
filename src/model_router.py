@@ -19,6 +19,11 @@ class ModelRouter:
     """Strategic model router to optimize latency, cost, and reasoning accuracy."""
 
     def __init__(self, default_model: str = ModelTier.FLASH.value):
+        """Initializes ModelRouter with a default Gemini model tier.
+
+        Args:
+            default_model (str, optional): Default Gemini model string identifier. Defaults to ModelTier.FLASH.value.
+        """
         self.default_model = default_model
 
     @trace_span(name="model_router.select_model", kind="routing")
@@ -28,13 +33,20 @@ class ModelRouter:
         data_sensitivity: Optional[str] = None,
         notes: Optional[str] = None
     ) -> Dict[str, Any]:
-        """
-        Selects appropriate Gemini model based on agent specialization and request risk factors.
-        
+        """Selects appropriate Gemini model based on agent specialization and request risk factors.
+
         Routing Logic:
         - Orchestrator: Uses Flash for fast routing and dispatch.
         - Compliance Specialist: Uses Pro for deep audit, SOC2 rule parsing, and CVE analysis.
         - Risk Evaluator: Uses Pro for High/Critical data sensitivity, Flash for Low/Medium.
+
+        Args:
+            agent_name (str): Name identifier of the agent requesting model routing (e.g., 'vendorguard_orchestrator', 'compliance_specialist', 'risk_evaluator').
+            data_sensitivity (Optional[str], optional): Data sensitivity level string (e.g. 'Low', 'Medium', 'High', 'Critical'). Defaults to None.
+            notes (Optional[str], optional): Additional text notes or context from user input. Defaults to None.
+
+        Returns:
+            Dict[str, Any]: Routing decision dictionary containing agent_name, selected_model, reason, data_sensitivity, and is_high_sensitivity flag.
         """
         sens_upper = (data_sensitivity or "").upper()
         is_high_sensitivity = "HIGH" in sens_upper or "CRITICAL" in sens_upper

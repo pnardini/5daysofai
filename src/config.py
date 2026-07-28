@@ -14,10 +14,20 @@ class SecretManager:
     """Secret Manager wrapper supporting GCP Secret Manager with local env fallback."""
 
     def __init__(self, project_id: Optional[str] = None):
+        """Initializes SecretManager with an optional GCP project ID.
+
+        Args:
+            project_id (Optional[str], optional): Google Cloud project ID for Secret Manager API access. Defaults to None.
+        """
         self.project_id = project_id or os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT")
         self._gcp_client = None
 
     def _get_gcp_client(self):
+        """Retrieves or initializes the Google Cloud Secret Manager client instance.
+
+        Returns:
+            Optional[secretmanager.SecretManagerServiceClient]: Secret manager client object or False if unavailable.
+        """
         if self._gcp_client is None:
             try:
                 from google.cloud import secretmanager
@@ -27,7 +37,15 @@ class SecretManager:
         return self._gcp_client
 
     def get_secret(self, secret_id: str, default: Optional[str] = None) -> Optional[str]:
-        """Fetch secret from Google Cloud Secret Manager if available, otherwise fallback to env var."""
+        """Fetch secret from Google Cloud Secret Manager if available, otherwise fallback to env var.
+
+        Args:
+            secret_id (str): Identifier or key name of the secret to retrieve.
+            default (Optional[str], optional): Default fallback value if secret is not found. Defaults to None.
+
+        Returns:
+            Optional[str]: Secret string value if found, otherwise default.
+        """
         # 1. Check local environment variable first if set explicitly
         env_val = os.getenv(secret_id.upper()) or os.getenv(secret_id)
         if env_val:

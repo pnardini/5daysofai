@@ -26,9 +26,15 @@ class ADKNativeEvaluator:
     @classmethod
     @trace_span(name="guardrail.evaluate_pii_safety", kind="eval")
     def evaluate_pii_safety(cls, content: str) -> GuardrailEvalResult:
-        """
-        ADK-native semantic evaluation for PII exposure.
+        """ADK-native semantic evaluation for PII exposure.
+
         Evaluates input text against PII safety policies (Emails, SSNs, Phone numbers, API Secrets).
+
+        Args:
+            content (str): Input text content string to inspect for potential PII or secret leaks.
+
+        Returns:
+            GuardrailEvalResult: Result object containing evaluation type, status, safety score, and detected violations.
         """
         if not content:
             return GuardrailEvalResult(
@@ -80,9 +86,17 @@ class ADKNativeEvaluator:
         tls_version: str,
         mfa_enforced: bool
     ) -> GuardrailEvalResult:
-        """
-        ADK-native evaluation for baseline security policy compliance.
+        """ADK-native evaluation for baseline security policy compliance.
+
         Enforces corporate mandatory security standards before risk scoring.
+
+        Args:
+            encryption_at_rest (bool): Boolean flag indicating whether AES-256 encryption at rest is enabled.
+            tls_version (str): Supported transit protocol version string (e.g. 'TLS 1.3').
+            mfa_enforced (bool): Boolean flag indicating whether MFA is mandated across user accounts.
+
+        Returns:
+            GuardrailEvalResult: Evaluation result containing safety status, safety score, and violation list.
         """
         violations = []
         if not encryption_at_rest:
@@ -118,17 +132,31 @@ class ADKNativeEvaluator:
 
 
 class ADKGuardrailPlugin(BasePlugin):
-    """
-    Google ADK Native Guardrail Plugin.
+    """Google ADK Native Guardrail Plugin.
+
     Hooks into ADK agent lifecycle callbacks to evaluate prompt safety and model output integrity.
     """
 
     def __init__(self, name: str = "adk_guardrail_plugin"):
+        """Initializes ADKGuardrailPlugin instance with plugin identifier name.
+
+        Args:
+            name (str, optional): Plugin instance name. Defaults to "adk_guardrail_plugin".
+        """
         super().__init__(name=name)
         self.evaluations_run: List[GuardrailEvalResult] = []
 
     def before_agent_callback(self, agent_name: str, prompt: str, **kwargs) -> Optional[str]:
-        """ADK Hook executed before agent run. Evaluates prompt safety."""
+        """ADK Hook executed before agent run. Evaluates prompt safety.
+
+        Args:
+            agent_name (str): Name of the ADK agent receiving the user prompt.
+            prompt (str): Raw input prompt string sent to the agent.
+            **kwargs: Additional keyword arguments passed by ADK framework.
+
+        Returns:
+            Optional[str]: Sanitized or validated prompt string.
+        """
         eval_res = ADKNativeEvaluator.evaluate_pii_safety(prompt)
         self.evaluations_run.append(eval_res)
         
@@ -138,7 +166,16 @@ class ADKGuardrailPlugin(BasePlugin):
         return prompt
 
     def after_model_callback(self, agent_name: str, response_text: str, **kwargs) -> Optional[str]:
-        """ADK Hook executed after model completion. Evaluates response safety."""
+        """ADK Hook executed after model completion. Evaluates response safety.
+
+        Args:
+            agent_name (str): Name of the ADK agent that produced the output response.
+            response_text (str): Raw generated response text from the LLM model.
+            **kwargs: Additional keyword arguments passed by ADK framework.
+
+        Returns:
+            Optional[str]: Evaluated response text string.
+        """
         eval_res = ADKNativeEvaluator.evaluate_pii_safety(response_text)
         self.evaluations_run.append(eval_res)
         return response_text

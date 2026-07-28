@@ -27,6 +27,7 @@ class TraceCollector:
     """In-memory trace collector to power the UI Telemetry Dashboard."""
 
     def __init__(self):
+        """Initializes TraceCollector with an empty internal trace buffer."""
         self._traces: List[Dict[str, Any]] = []
 
     def record_span(
@@ -38,6 +39,16 @@ class TraceCollector:
         status: str = "OK",
         error: Optional[str] = None,
     ):
+        """Records an OpenTelemetry span execution entry in the trace log.
+
+        Args:
+            name (str): Span or operation name (e.g. 'vector_store.search').
+            kind (str): Span categorization kind (e.g. 'memory', 'tool', 'routing').
+            duration_ms (float): Execution duration in milliseconds.
+            attributes (Dict[str, Any]): Dictionary of attributes associated with the span.
+            status (str, optional): Span execution status ('OK' or 'ERROR'). Defaults to "OK".
+            error (Optional[str], optional): Error message string if execution failed. Defaults to None.
+        """
         span_data = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "name": name,
@@ -58,9 +69,15 @@ class TraceCollector:
         )
 
     def get_traces(self) -> List[Dict[str, Any]]:
+        """Returns recorded trace spans in reverse chronological order.
+
+        Returns:
+            List[Dict[str, Any]]: List of recorded span dictionaries.
+        """
         return list(reversed(self._traces))
 
     def clear(self):
+        """Clears all stored traces in memory."""
         self._traces.clear()
 
 
@@ -68,7 +85,15 @@ trace_collector = TraceCollector()
 
 
 def trace_span(name: str, kind: str = "internal"):
-    """Decorator to instrument async or sync functions with OpenTelemetry spans."""
+    """Decorator to instrument async or sync functions with OpenTelemetry spans.
+
+    Args:
+        name (str): OpenTelemetry span name.
+        kind (str, optional): Span kind categorization. Defaults to "internal".
+
+    Returns:
+        Callable: Wrapped function with telemetry tracing logic.
+    """
     def decorator(func: Callable):
         if asyncio_iscoroutinefunction(func):
             @functools.wraps(func)
